@@ -20,7 +20,7 @@ def get_common_args():
     # parser.add_argument('--test', type=bool, default=False, help='whether to test the model')
     parser.add_argument('--gpu', type=str, default='0,1,2', help='GPU ID')
     parser.add_argument('--num', type=int, default=1, help='number of parallel processes')
-    parser.add_argument('--n_itr', type=int, default=300001, help='number of iterations') #each iteration may contain one or more episodes
+    parser.add_argument('--n_itr', type=int, default=500001, help='number of iterations') #each iteration may contain one or more episodes
                                                                                 #see args.n_episodes below
 
     args = parser.parse_args()
@@ -43,19 +43,22 @@ def get_common_args():
     args.n_ally_platoons = 1 #total number of platoons. WARNING: PLEASE KEEP IT EQUAL TO 1.
     args.n_ally_agent_in_platoon = 4 #total number of agents in each platoon (this can be changed)
     
-    ## Define strategic points for the given map
-    if args.map == '4t_vs_4t_7SPs':
-        args.map_sps = {"0": [28.24, 39.35],
-                        "1": [48.5, 44.37],
-                        "2": [34.62, 71.31],
-                        "3": [33.86, 101.59],
-                        "4": [62.01, 111.68],
-                        "5": [78.91, 74.61],
-                        "6": [110.38, 104.69]}
-        
-    if args.map in ['4t_vs_4t_8SPs', '4t_vs_4t_8SPs_weakened',
-                    '4t_vs_0t_8SPs_randomized', '4t_vs_0t_8SPs',
-                    '4t_vs_0t_8SPs_RandomEnemy', '4t_vs_0t_8SPs_RandomEnemy_075']:
+    
+    
+    
+    allmaps = {
+      '_8sp_no_enemy': ['4t_vs_0t_8SPs_randomized', '4t_vs_0t_8SPs',
+                                         '4t_vs_0t_8SPs_RandomEnemy',
+                                         '4t_vs_0t_8SPs_RandomEnemy_075'],
+      'multiscenario_maps': ['4t_vs_12t_3paths_general', '12t_vs_12t_3paths_general'], #multiscenario_13sp_3path_maps
+      '_13sp_3path_maps': ['dummy'],
+      '_8sp_1path_maps': ['4t_vs_4t_8SPs', '4t_vs_4t_8SPs_weakened']
+    }
+    
+    args.allmaps = allmaps
+    
+    ## Define strategic points for the given map        
+    if args.map in allmaps['_8sp_1path_maps'] + allmaps['_8sp_no_enemy']:
         args.map_sps = {"0": [28.24, 39.35],
                         "1": [48.5, 44.37],
                         "2": [34.62, 71.31],
@@ -66,9 +69,7 @@ def get_common_args():
                         "7": [110.38, 104.69]}
         
     # Mixed Scenarios maps are '4t_vs_12t_3paths_general' and '12t_vs_12t_3paths_general'
-    if args.map in ['4t_vs_4t_3paths_random_move', '4t_vs_4t_3paths_spawnSP1', '4t_vs_4t_3paths_spawnSP4', '4t_vs_4t_3paths_spawnSP7',
-                      '4t_vs_4t_3paths_spawnSP10', '4t_vs_4t_3paths_fixed_enemy', '4t_vs_4t_3paths_dyna_enemy', '4t_vs_4t_3paths_cont_nav',
-                      '4t_vs_20t_3paths', '4t_vs_12t_3paths_general', '12t_vs_12t_3paths_general']:
+    if args.map in allmaps['multiscenario_maps'] + allmaps['_13sp_3path_maps']:
         args.map_sps = {"0": [12.07, 36.92],
                           "1": [45.25, 42.38],
                           "2": [27.04, 88.21],
@@ -82,6 +83,20 @@ def get_common_args():
                           "10": [116.55, 53.57],
                           "11": [104.19, 77.89],
                           "12": [110.25, 100.89]}
+        
+    if args.map in allmaps['multiscenario_maps']:
+      args.num_scenarios = 3
+      args.final_SP_to_reach = 13
+    elif args.map in allmaps['_13sp_3path_maps']:
+      args.num_scenarios = 1
+      args.final_SP_to_reach = 13
+    elif args.map in allmaps['_8sp_1path_maps'] + allmaps['_8sp_no_enemy']:
+      args.num_scenarios = 1
+      args.final_SP_to_reach = 8
+    else:
+      args.num_scenarios = 1
+      args.final_SP_to_reach = None
+    
 
     args.formation = True #shall the ally agents in a platoon make a particular formation around a strategic point?
     args.deviation = 3 #when ally agents make a formation around strategic point, how far can each agent be from actual strategic point
@@ -98,6 +113,8 @@ def get_common_args():
     
     args.obs_distance_target = True #whether to include distance to target strategic point as a feature in the input state of an agent
 
+    args.timing_analysis = False #for logging the time taken for execution (check runner.py)
+    
     return args
 
 
